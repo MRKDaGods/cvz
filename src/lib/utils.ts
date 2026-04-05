@@ -63,10 +63,41 @@ export function extractJSON(text: string): Record<string, unknown> {
     // Fall through
   }
 
-  // Find the outermost { ... } in the response
+  // Find the first balanced { ... } block (brace-counting).
+  // This handles cases where the LLM outputs JSON then repeats it.
   const start = text.indexOf("{");
+  if (start === -1) throw new SyntaxError("No JSON object found in response");
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (ch === "\\") {
+      if (inString) escape = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        return JSON.parse(text.slice(start, i + 1)) as Record<string, unknown>;
+      }
+    }
+  }
+
+  // Fallback: first { to last } (original behaviour)
   const end = text.lastIndexOf("}");
-  if (start !== -1 && end > start) {
+  if (end > start) {
     return JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>;
   }
 
