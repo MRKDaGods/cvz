@@ -1,0 +1,236 @@
+% =============================================================================
+% CLASSIC CV TEMPLATE — CvOptimizZer / FAANG-Grade Reference Design
+% =============================================================================
+% Clean Helvetica layout matching the design from CvOptimizZer.
+% ALL-CAPS section headers with horizontal rules beneath.
+% Entry format: ROLE | COMPANY (bold) on line 1,
+%               Location (italic)        Date (bold, right-aligned) on line 2.
+% Font: Helvetica (helvet) — industry-standard ATS-safe sans-serif.
+%
+% Compile with: latexmk -pdf classic.tex
+%
+% ╔═══════════════════════════════════════════════════════════════════════════╗
+% ║  GUARDRAILS — READ BEFORE MODIFYING                                     ║
+% ║  • Do NOT add \definecolor, \colorlet, or color commands beyond         ║
+% ║    \linkcolor defined below.                                            ║
+% ║  • Do NOT add packages not listed below (no tikz, tcolorbox, etc.).     ║
+% ║  • Do NOT \renewcommand or redefine any command defined below.          ║
+% ║  • Do NOT use \raggedright — use \RaggedRight (from ragged2e) instead.  ║
+% ║  • Every \item in itemize MUST start with \RaggedRight.                 ║
+% ║  • Skills MUST use bold category labels with \\ between categories.     ║
+% ║  • The ONLY acceptable modifications are filling {{PLACEHOLDER}} values ║
+% ║    and removing entire sections that have no data.                       ║
+% ╚═══════════════════════════════════════════════════════════════════════════╝
+%
+% PLACEHOLDER MARKERS:
+%   {{NAME}}        — Full name
+%   {{EMAIL}}       — Email address
+%   {{PHONE}}       — Phone number
+%   {{LINKEDIN}}    — LinkedIn username (bare, e.g. johndoe)
+%   {{GITHUB}}      — GitHub username (bare, e.g. johndoe)
+%   {{LOCATION}}    — City, Country
+%   {{SUMMARY}}     — 2-3 line professional summary (\RaggedRight text)
+%   {{EXPERIENCE}}  — Experience block (\expentry groups + itemize)
+%   {{EDUCATION}}   — Education block (\eduentry groups)
+%   {{SKILLS}}      — Skills: \textbf{Category:} item1, item2 \\ per line
+%   {{PROJECTS}}    — Projects block (\projentry groups + itemize)
+%   {{AWARDS}}      — Awards (\awardentry per entry). Remove if none.
+%   {{INTERESTS}}   — Short paragraph. Remove section if not provided.
+% =============================================================================
+
+\documentclass[10pt,letterpaper]{article}
+
+% ---------------------------------------------------------------------------
+% PACKAGES — Do NOT add any packages beyond these.
+% ---------------------------------------------------------------------------
+
+\usepackage[
+  letterpaper,
+  top=0.4in,
+  bottom=0.4in,
+  left=0.5in,
+  right=0.5in
+]{geometry}
+
+% Font: Helvetica (helvet) — the FAANG-standard CV sans-serif
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[T1]{fontenc}
+
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{ragged2e}
+
+% ---------------------------------------------------------------------------
+% COLORS — Do NOT modify, redefine, or add new colors.
+% ---------------------------------------------------------------------------
+
+\definecolor{linkcolor}{rgb}{0.1, 0.4, 0.7}   % Subtle professional blue
+
+\usepackage[
+  hidelinks,
+  colorlinks=true,
+  urlcolor=linkcolor,
+  linkcolor=black
+]{hyperref}
+
+% ATS: ensure generated PDF text is machine-readable
+\input{glyphtounicode}
+\pdfgentounicode=1
+
+% ---------------------------------------------------------------------------
+% STYLE CONFIGURATION — Do NOT modify these settings.
+% ---------------------------------------------------------------------------
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\raggedbottom
+
+% ALL-CAPS section headings with a titlerule underneath (CvOptimizZer style)
+\titleformat{\section}
+  {\large\bfseries\MakeUppercase\raggedright}
+  {}
+  {0em}
+  {}
+  [\vspace{1pt}\titlerule]
+
+\titlespacing*{\section}
+  {0pt}{8pt}{5pt}
+
+% Tight bullet lists — identical to CvOptimizZer reference
+\setlist[itemize]{
+  leftmargin=*,
+  noitemsep,
+  topsep=2pt,
+  partopsep=0pt,
+  parsep=0pt
+}
+
+% ---------------------------------------------------------------------------
+% CUSTOM COMMANDS — Do NOT redefine or renewcommand these.
+%
+% \expentry{Company}{Role}{Location}{Dates}
+%   Renders: ROLE | COMPANY (bold, line 1)
+%            Location (italic, left) — Dates (bold, right-aligned, line 2)
+%
+% \eduentry{School}{Degree}{Location}{Dates}  — same layout
+% \projentry{Name}{Tech Stack}{Date}
+% \awardentry{Award Name}{Issuer}{Date}
+% ---------------------------------------------------------------------------
+
+\newcommand{\expentry}[4]{%
+  \par\nobreak\vspace{4pt}%
+  \textbf{#2 | #1}\\[1pt]%
+  \textit{#3}\hfill\textbf{#4}%
+  \par\nopagebreak\vspace{1pt}%
+}
+
+\newcommand{\eduentry}[4]{%
+  \par\nobreak\vspace{4pt}%
+  \textbf{#2 | #1}\\[1pt]%
+  \textit{#3}\hfill\textbf{#4}%
+  \par\nopagebreak\vspace{1pt}%
+}
+
+\newcommand{\projentry}[3]{%
+  \par\nobreak\vspace{4pt}%
+  \textbf{#1}\enspace\textit{| #2}\hfill\textbf{#3}%
+  \par\nopagebreak\vspace{1pt}%
+}
+
+\newcommand{\awardentry}[3]{%
+  \par\nobreak\vspace{3pt}%
+  \textbf{#1}\enspace|\enspace#2\hfill\textit{#3}%
+  \vspace{2pt}%
+}
+
+% =============================================================================
+% DOCUMENT
+% =============================================================================
+
+\begin{document}
+
+% ---------------------------------------------------------------------------
+% HEADER — \Huge bold name, centered; mbox wraps each icon+text pair
+% so icons never split onto a different line from their text.
+% ---------------------------------------------------------------------------
+\begin{center}
+  {\Huge\textbf{{{NAME}}}}\\[5pt]
+  \normalsize
+  \mbox{\faPhone\ \href{tel:{{PHONE}}}{{{PHONE}}}} \quad
+  \mbox{\faEnvelope\ \href{mailto:{{EMAIL}}}{{{EMAIL}}}} \quad
+  \mbox{\faLinkedin\ \href{https://linkedin.com/in/{{LINKEDIN}}}{{{LINKEDIN}}}} \quad
+  \mbox{\faGithub\ \href{https://github.com/{{GITHUB}}}{{{GITHUB}}}} \quad
+  \mbox{\faMapMarker\ {{LOCATION}}}
+\end{center}
+
+\vspace{2pt}
+
+% ---------------------------------------------------------------------------
+% PROFESSIONAL SUMMARY
+% ---------------------------------------------------------------------------
+\section{Professional Summary}
+\RaggedRight
+{{SUMMARY}}
+
+% ---------------------------------------------------------------------------
+% EXPERIENCE
+% Use \expentry{Company}{Role}{Location}{Dates} then itemize bullets.
+% Each \item MUST start with \RaggedRight.
+% Example:
+%   \expentry{Google}{Senior SWE}{Mountain View, CA}{Jun 2022 -- Present}
+%   \begin{itemize}
+%     \item \RaggedRight Architected ...
+%   \end{itemize}
+% ---------------------------------------------------------------------------
+\section{Experience}
+{{EXPERIENCE}}
+
+% ---------------------------------------------------------------------------
+% EDUCATION
+% Use \eduentry{School}{Degree}{Location}{Dates}
+% Add GPA on a new line after the entry if 3.5+: GPA: 3.89 / 4.0
+% ---------------------------------------------------------------------------
+\section{Education}
+{{EDUCATION}}
+
+% ---------------------------------------------------------------------------
+% TECHNICAL SKILLS
+% Use bold category label + colon, then comma-separated items.
+% Use \\ between categories. Example:
+%   \textbf{Languages:} C++, Python, JavaScript \\
+%   \textbf{Tools:} Docker, Git, AWS
+% ---------------------------------------------------------------------------
+\section{Technical Skills}
+\RaggedRight
+{{SKILLS}}
+
+% ---------------------------------------------------------------------------
+% PROJECTS
+% Use \projentry{Name}{Tech Stack}{Date} then itemize bullets.
+% Each \item MUST start with \RaggedRight.
+% Remove this entire section if no projects.
+% ---------------------------------------------------------------------------
+\section{Projects}
+{{PROJECTS}}
+
+% ---------------------------------------------------------------------------
+% AWARDS & CERTIFICATIONS
+% Use \awardentry{Award Name}{Issuer}{Date} per entry.
+% Remove this entire section if no awards.
+% ---------------------------------------------------------------------------
+\section{Awards \& Certifications}
+{{AWARDS}}
+
+% ---------------------------------------------------------------------------
+% INTERESTS — short paragraph. Remove this section if not provided.
+% ---------------------------------------------------------------------------
+\section{Interests}
+\RaggedRight
+{{INTERESTS}}
+
+\end{document}

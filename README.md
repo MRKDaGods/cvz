@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CVZ
 
-## Getting Started
+CV optimizer that turns your resume into something you'd actually want to submit. Upload a PDF, paste a job description, pick a LaTeX template, and get back an ATS-friendly CV with AI feedback on every section.
 
-First, run the development server:
+Based on [CvOptimizZer](https://github.com/MRKDaGods/CvOptimizZer) (2024).
+
+**by Mohamed Ammar & Claude :)**
+
+## What it does
+
+1. **Upload** your existing CV (PDF or paste text)
+2. **Review** — AI extracts and structures your sections
+3. **Template** — pick from 4 LaTeX templates (classic, modern, executive, academic)
+4. **Optimize** — AI rewrites bullets with STAR method, quantified impact, and keyword matching against the job description. Scores each section and gives inline comments
+5. **Refine** — answer AI questions, add corrections, re-optimize until satisfied
+6. **Download** — compiled LaTeX → PDF, or grab the `.tex` source
+
+The AI asks questions when it's unsure ("Did you mean 2 years at AWS or 3?"), flags issues by severity, and lets you accept/reject/refine every suggestion per-bullet.
+
+## Stack
+
+- **Next.js 16** (App Router, React 19)
+- **GitHub Copilot SDK** for all LLM calls (models configurable per-step)
+- **LaTeX** (MiKTeX/TeX Live) for PDF compilation
+- **Prisma + SQLite** for sessions/data
+- **Zustand** for client state
+- **shadcn/ui + Tailwind CSS 4**
+- **GitHub OAuth** for auth
+
+## Prerequisites
+
+- Node.js 20+
+- A LaTeX distribution ([MiKTeX](https://miktex.org/) on Windows, TeX Live on Linux/macOS) — needs `pdflatex` on PATH
+- A [GitHub OAuth App](https://github.com/settings/developers) (for authentication)
+- [GitHub Copilot](https://github.com/features/copilot) subscription (the app uses Copilot's API for AI)
+
+## Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/MRKDaGods/cvz.git
+cd cvz
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy the example env and fill in your values:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+You'll need:
+- A GitHub OAuth App — set the callback URL to `http://localhost:3000/api/auth/callback`
+- Generate a session secret: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
-## Learn More
+Initialize the database and start:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npx prisma db push
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [localhost:3000](http://localhost:3000), sign in with GitHub, and start optimizing.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project structure
 
-## Deploy on Vercel
+```
+src/
+  app/              # Next.js routes & API
+    api/
+      auth/         # GitHub OAuth flow
+      compile/      # LaTeX → PDF compilation
+      pipeline/     # extract, optimize, refine, parse-pdf, keywords
+      smart/        # ATS scoring, gap analysis, interview prep
+      sessions/     # CRUD
+  components/
+    cv/             # section cards, score charts, AI questions panel
+    session/        # wizard steps (upload, review, template, optimize, finalize)
+    ui/             # shadcn components
+  lib/
+    auth/           # session cookies, crypto
+    copilot/        # Copilot SDK client, model selection
+    latex/          # LaTeX compiler wrapper
+    pdf/            # PDF text extraction
+    pipeline/       # prompt templates
+    stream/         # SSE streaming utilities
+  stores/           # Zustand stores (cv, pipeline, model, ui)
+templates/          # LaTeX templates (.tex)
+prisma/             # Schema
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Templates
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Template | Style |
+|----------|-------|
+| **Classic** | Clean single-column, Helvetica, all-caps headers |
+| **Modern** | Tighter spacing, tgheros font, subtle rules |
+| **Executive** | Charter serif, generous whitespace |
+| **Academic** | Latin Modern, publication-friendly |
+
+## License
+
+MIT

@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String    @id @default(cuid())
+  createdAt DateTime  @default(now())
+  accounts  Account[]
+  sessions  Session[]
+}
+
+model Account {
+  id            String  @id @default(cuid())
+  userId        String
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  githubId      String  @unique
+  githubUsername String
+  avatarUrl     String?
+  accessToken   String // Encrypted
+  isActive      Boolean @default(false)
+}
+
+model Session {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String      @default("Untitled")
+  stage       String      @default("upload")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  rawCvText   String?
+  jobDesc     String?
+  templateId  String      @default("classic")
+  keywords    String?     // JSON: { mustHave: string[], niceToHave: string[] }
+  fieldAnalysis String?   // JSON: { domain, seniority, primarySkills }
+  sections    CvSection[]
+  scores      Score?
+  latexSource String?
+  pdfPath     String?
+}
+
+model CvSection {
+  id               String  @id @default(cuid())
+  sessionId        String
+  session          Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  type             String
+  title            String
+  originalContent  String
+  optimizedContent String?
+  latexContent     String?
+  aiComments       String? // JSON array of AiComment
+  userNotes        String?
+  order            Int
+}
+
+model Score {
+  id            String  @id @default(cuid())
+  sessionId     String  @unique
+  session       Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  atsBefore     Int
+  atsAfter      Int
+  jobFitBefore  Int
+  jobFitAfter   Int
+  qualityBefore Int
+  qualityAfter  Int
+  tierBefore    String
+  tierAfter     String
+}

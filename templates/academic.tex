@@ -1,0 +1,237 @@
+% =============================================================================
+% ACADEMIC CV TEMPLATE — For Students, Researchers, and New Graduates
+% =============================================================================
+% Education-first layout with prominent projects, publications, and awards.
+% Ideal for candidates where academic credentials outweigh industry experience.
+% Font: Latin Modern (the standard academic font — clean, familiar, trusted)
+%
+% Compile with: latexmk -pdf academic.tex
+%
+% ╔═══════════════════════════════════════════════════════════════════════════╗
+% ║  GUARDRAILS — READ BEFORE MODIFYING                                     ║
+% ║  • Do NOT add \definecolor, \colorlet, \color{}, or colored rules       ║
+% ║    beyond what is defined below.                                        ║
+% ║  • Do NOT add packages not listed below (no tikz, tcolorbox, etc.).     ║
+% ║  • Do NOT \renewcommand or redefine any command defined below.          ║
+% ║  • Do NOT add sidebar backgrounds, column coloring, or shading.         ║
+% ║  • Publications MUST use the enumerate environment with [1] labels.     ║
+% ║  • Do NOT add \titleformat, \titlespacing, \setlist, or \pagestyle      ║
+% ║    overrides — the template handles all styling.                        ║
+% ║  • The ONLY acceptable modifications are filling {{PLACEHOLDER}} values ║
+% ║    and removing entire sections that have no data.                       ║
+% ╚═══════════════════════════════════════════════════════════════════════════╝
+%
+% PLACEHOLDER MARKERS:
+%   {{NAME}}          — Full name
+%   {{EMAIL}}         — Email address
+%   {{PHONE}}         — Phone number
+%   {{LINKEDIN}}      — LinkedIn username
+%   {{GITHUB}}        — GitHub username
+%   {{LOCATION}}      — City, State or City, Country
+%   {{SUMMARY}}       — 2-3 sentence objective or research interest statement
+%   {{EDUCATION}}     — Detailed education (GPA, coursework, thesis title)
+%   {{PROJECTS}}      — Projects block (prominent, before experience)
+%   {{PUBLICATIONS}}  — Publications in numbered bibliography style
+%   {{EXPERIENCE}}    — Work/research experience block
+%   {{SKILLS}}        — Skills content
+%   {{AWARDS}}        — Awards, honors, scholarships
+% =============================================================================
+
+\documentclass[10pt,letterpaper]{article}
+
+% ---------------------------------------------------------------------------
+% PACKAGES — Do NOT add any packages beyond these.
+% ---------------------------------------------------------------------------
+
+\usepackage[
+  letterpaper,
+  top=0.4in,
+  bottom=0.4in,
+  left=0.5in,
+  right=0.5in
+]{geometry}
+
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+\usepackage{microtype}
+
+% Font: Latin Modern — the standard LaTeX/academic font, clean and trusted
+\usepackage{lmodern}
+\usepackage[T1]{fontenc}
+
+\usepackage{xcolor}
+
+% ---------------------------------------------------------------------------
+% COLORS — Do NOT modify, redefine, or add new colors.
+% ---------------------------------------------------------------------------
+
+\definecolor{accent}{HTML}{2C3E50}
+
+\usepackage[
+  colorlinks=true,
+  urlcolor=blue,
+  linkcolor=blue,
+  pdfborder={0 0 0}
+]{hyperref}
+
+% ATS: ensure generated PDF text is machine-readable
+\input{glyphtounicode}
+\pdfgentounicode=1
+
+% ---------------------------------------------------------------------------
+% STYLE CONFIGURATION — Do NOT modify these settings.
+% ---------------------------------------------------------------------------
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\tabcolsep}{0in}
+\raggedbottom
+\raggedright
+
+% Section headings: colored bold with rule
+\titleformat{\section}
+  {\color{accent}\scshape\raggedright\large}
+  {}
+  {0em}
+  {}
+  [\vspace{1pt}\titlerule]
+
+\titlespacing*{\section}
+  {0pt}{6pt}{4pt}
+
+% Tight bullet lists
+\setlist[itemize]{
+  nosep,
+  leftmargin=1.4em,
+  label=\textbullet,
+  topsep=0pt,
+  parsep=0pt,
+  itemsep=1pt,
+  partopsep=0pt
+}
+
+% Numbered publication list: [1], [2], ...
+\setlist[enumerate]{
+  nosep,
+  leftmargin=2em,
+  label={[\arabic*]},
+  topsep=1pt,
+  parsep=0pt,
+  itemsep=2pt,
+  partopsep=0pt
+}
+
+% ---------------------------------------------------------------------------
+% CUSTOM COMMANDS — Do NOT redefine or renewcommand these.
+%
+% Entry commands use tabular* for precise left/right alignment (FAANG standard).
+% \eduentry{School}{Degree}{Location}{Dates} — follow with GPA, coursework
+% \expentry{Organization}{Role}{Location}{Dates}
+% \projentry{Name}{Tech Stack}{Date/Link}
+% \awardentry{Award Name}{Issuer}{Date}
+% ---------------------------------------------------------------------------
+
+\newcommand{\eduentry}[4]{%
+  \vspace{2pt}%
+  \begin{tabular*}{\textwidth}[t]{l@{\extracolsep{\fill}}r}%
+    \textbf{#1} & \textit{#4} \\%
+    \textit{\small #2} & {\small #3} \\%
+  \end{tabular*}\par\nopagebreak\vspace{-3pt}%
+}
+
+\newcommand{\expentry}[4]{%
+  \vspace{2pt}%
+  \begin{tabular*}{\textwidth}[t]{l@{\extracolsep{\fill}}r}%
+    \textbf{#1} & \textit{#4} \\%
+    \textit{\small #2} & {\small #3} \\%
+  \end{tabular*}\par\nopagebreak\vspace{-3pt}%
+}
+
+\newcommand{\projentry}[3]{%
+  \vspace{2pt}%
+  \begin{tabular*}{\textwidth}[t]{l@{\extracolsep{\fill}}r}%
+    \textbf{#1}\enspace---\enspace\textit{#2} & #3 \\%
+  \end{tabular*}\par\nopagebreak\vspace{-3pt}%
+}
+
+\newcommand{\awardentry}[3]{%
+  \vspace{2pt}%
+  \begin{tabular*}{\textwidth}[t]{l@{\extracolsep{\fill}}r}%
+    \textbf{#1}\enspace---\enspace#2 & \textit{#3} \\%
+  \end{tabular*}\vspace{-3pt}%
+}
+
+% =============================================================================
+% DOCUMENT
+% =============================================================================
+
+\begin{document}
+
+% ---------------------------------------------------------------------------
+% HEADER — name + contact line
+% ---------------------------------------------------------------------------
+\begin{center}
+  {\Huge\scshape {{NAME}}}\\[3pt]
+  \small
+  \faIcon{phone}\enspace{}{{PHONE}} $|$
+  \href{mailto:{{EMAIL}}}{\faIcon{envelope}\enspace{}{{EMAIL}}} $|$
+  \href{https://linkedin.com/in/{{LINKEDIN}}}{\faIcon{linkedin}\enspace{}{{LINKEDIN}}} $|$
+  \href{https://github.com/{{GITHUB}}}{\faIcon{github}\enspace{}{{GITHUB}}} $|$
+  \faIcon{map-marker-alt}\enspace{}{{LOCATION}}
+\end{center}
+
+\vspace{3pt}
+
+% ---------------------------------------------------------------------------
+% OBJECTIVE / RESEARCH INTERESTS
+% ---------------------------------------------------------------------------
+\section{Objective}
+{{SUMMARY}}
+
+% ---------------------------------------------------------------------------
+% EDUCATION (Detailed — prominent for academic candidates)
+% Use \eduentry{School}{Degree}{Location}{Dates}
+% Then add: GPA, Relevant Coursework, Thesis/Capstone lines below.
+% ---------------------------------------------------------------------------
+\section{Education}
+{{EDUCATION}}
+
+% ---------------------------------------------------------------------------
+% PROJECTS (Prominent — placed before Experience for students)
+% Use \projentry{Name}{Tech Stack}{Date/Link} followed by itemize bullets.
+% ---------------------------------------------------------------------------
+\section{Projects}
+{{PROJECTS}}
+
+% ---------------------------------------------------------------------------
+% PUBLICATIONS — numbered list in reverse-chronological order.
+% Use enumerate environment. Each item: Author(s). "Title." Venue, Year.
+% Remove this entire section if no publications.
+% ---------------------------------------------------------------------------
+\section{Publications}
+{{PUBLICATIONS}}
+
+% ---------------------------------------------------------------------------
+% RESEARCH & WORK EXPERIENCE
+% Use \expentry{Organization}{Role}{Location}{Dates} followed by bullets.
+% ---------------------------------------------------------------------------
+\section{Experience}
+{{EXPERIENCE}}
+
+% ---------------------------------------------------------------------------
+% SKILLS — compact categorized format.
+% ---------------------------------------------------------------------------
+\section{Technical Skills}
+{{SKILLS}}
+
+% ---------------------------------------------------------------------------
+% AWARDS & HONORS
+% Use \awardentry{Award Name}{Issuer}{Date} for each item.
+% Remove this entire section if no awards.
+% ---------------------------------------------------------------------------
+\section{Awards \& Honors}
+{{AWARDS}}
+
+\end{document}
