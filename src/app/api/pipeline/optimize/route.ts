@@ -5,6 +5,8 @@ import { createPipelineSession } from "@/lib/copilot/session";
 import { createSSEFromSession } from "@/lib/stream/sse";
 import { db } from "@/lib/db";
 import { debug } from "@/lib/debug";
+import { decrypt } from "@/lib/auth/crypto";
+import { fetchGitHubContext } from "@/lib/github/fetch-repos";
 import { parseSectionContent, serializeSectionContent, extractJSON } from "@/lib/utils";
 
 export async function POST(request: NextRequest) {
@@ -58,6 +60,21 @@ export async function POST(request: NextRequest) {
 
     const { optimizeAndScoreCvPrompt } = await import("@/lib/pipeline/prompts");
 
+    // Fetch GitHub repo context if user notes contain GitHub links
+    let enrichedNotes = typeof userNotes === "string" ? userNotes.trim() : "";
+    if (enrichedNotes) {
+      try {
+        const githubToken = decrypt(account.accessToken);
+        const githubContext = await fetchGitHubContext(enrichedNotes, githubToken);
+        if (githubContext) {
+          enrichedNotes = enrichedNotes + "\n" + githubContext;
+          debug.pipeline(`[optimize] Enriched notes with GitHub context (${githubContext.length} chars)`);
+        }
+      } catch (err) {
+        debug.pipeline("[optimize] GitHub context fetch failed (non-fatal):", err instanceof Error ? err.message : String(err));
+      }
+    }
+
     const sectionsJson = JSON.stringify(
       updatedSession!.sections.map((s) => {
         const payload = parseSectionContent(s.originalContent);
@@ -77,7 +94,7 @@ export async function POST(request: NextRequest) {
       sectionsJson,
       updatedSession!.keywords ?? "{}",
       updatedSession!.fieldAnalysis ?? "{}",
-      typeof userNotes === "string" ? userNotes.trim() : "",
+      enrichedNotes || undefined,
     );
     const session = await createPipelineSession(client, { systemPrompt: prompt, model });
     debug.pipeline("[optimize] Session created, starting optimization stream...");
