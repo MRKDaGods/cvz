@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, FileText, Clock, Trash2 } from "lucide-react";
+import { Plus, FileText, Clock, Trash2, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,7 +35,7 @@ export default function DashboardPage() {
   useEffect(() => {
     fetch("/api/sessions")
       .then((r) => r.json())
-      .then((data) => setSessions(data.sessions ?? []))
+      .then((data) => setSessions(Array.isArray(data) ? data : data.sessions ?? []))
       .catch(() => toast.error("Failed to load sessions"))
       .finally(() => setLoading(false));
   }, []);
@@ -64,6 +64,17 @@ export default function DashboardPage() {
     }
   };
 
+  const deleteAllSessions = async () => {
+    if (!confirm("Delete all sessions? This cannot be undone.")) return;
+    try {
+      await fetch("/api/sessions", { method: "DELETE" });
+      setSessions([]);
+      toast.success("All sessions deleted");
+    } catch {
+      toast.error("Failed to delete sessions");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="border-b bg-background sticky top-0 z-50">
@@ -81,10 +92,18 @@ export default function DashboardPage() {
               Create, optimize, and manage your resumes.
             </p>
           </div>
-          <Button size="sm" onClick={createSession}>
-            <Plus className="mr-2 h-3.5 w-3.5" />
-            New CV
-          </Button>
+          <div className="flex items-center gap-2">
+            {sessions.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={deleteAllSessions} className="text-muted-foreground hover:text-destructive">
+                <Trash className="mr-2 h-3.5 w-3.5" />
+                Delete All
+              </Button>
+            )}
+            <Button size="sm" onClick={createSession}>
+              <Plus className="mr-2 h-3.5 w-3.5" />
+              New CV
+            </Button>
+          </div>
         </div>
 
         {loading ? (

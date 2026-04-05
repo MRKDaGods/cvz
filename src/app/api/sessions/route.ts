@@ -42,3 +42,16 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json(session, { status: 201 });
 }
+
+export async function DELETE() {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { count } = await db.session.deleteMany({
+    where: { userId: user.id },
+  });
+
+  return NextResponse.json({ deleted: count });
+}
