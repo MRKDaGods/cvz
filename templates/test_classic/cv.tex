@@ -1,0 +1,180 @@
+% =============================================================================
+% CLASSIC CV TEMPLATE — Jake's Resume Style
+% =============================================================================
+% Single-column, ATS-friendly layout. The most popular format at FAANG.
+% Font: TeX Gyre Heros (Helvetica-quality sans-serif, Type 1, ATS-safe)
+%
+% Compile with: latexmk -pdf classic.tex
+%
+% ╔═══════════════════════════════════════════════════════════════════════════╗
+% ║  GUARDRAILS — READ BEFORE MODIFYING                                     ║
+% ║  • Do NOT add \definecolor, \colorlet, \color{}, or colored rules.      ║
+% ║  • Do NOT add packages not listed below (no tikz, tcolorbox, etc.).     ║
+% ║  • Do NOT \renewcommand or redefine \expentry, \eduentry, \projentry.   ║
+% ║  • Do NOT add sidebar backgrounds, column coloring, or shading.         ║
+% ║  • The ONLY acceptable modifications are filling {{PLACEHOLDER}} values ║
+% ║    and removing entire sections that have no data.                       ║
+% ╚═══════════════════════════════════════════════════════════════════════════╝
+%
+% PLACEHOLDER MARKERS:
+%   John Doe        — Full name
+%   j@ex.com       — Email address
+%   555       — Phone number
+%   jd    — LinkedIn username (appears after linkedin.com/in/)
+%   jd      — GitHub username (appears after github.com/)
+%   NYC    — City, State or City, Country
+%   Engineer.     — 2-3 sentence professional summary
+%     — Full experience block (multiple \expentry groups)
+%      — Full education block (\eduentry groups)
+%   Go      — Skills content (comma-separated or categorized)
+%       — Projects block (\projentry groups)
+% =============================================================================
+
+\documentclass[10pt,letterpaper]{article}
+
+% ---------------------------------------------------------------------------
+% PACKAGES — Do NOT add any packages beyond these.
+% ---------------------------------------------------------------------------
+
+\usepackage[
+  letterpaper,
+  top=0.45in,
+  bottom=0.45in,
+  left=0.5in,
+  right=0.5in
+]{geometry}
+
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fontawesome5}
+\usepackage{microtype}          % Improved kerning and line-breaking
+
+% Font: TeX Gyre Heros (high-quality Helvetica clone, ATS-safe)
+\usepackage{tgheros}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[T1]{fontenc}
+
+\usepackage[
+  colorlinks=true,
+  urlcolor=blue,
+  linkcolor=blue,
+  pdfborder={0 0 0}
+]{hyperref}
+
+\usepackage{xcolor}
+
+% ---------------------------------------------------------------------------
+% STYLE CONFIGURATION — Do NOT modify these settings.
+% ---------------------------------------------------------------------------
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% Section headings: bold uppercase with rule underneath
+\titleformat{\section}
+  {\large\bfseries\uppercase}
+  {}
+  {0em}
+  {}
+  [\vspace{-0.6ex}\titlerule]
+
+\titlespacing*{\section}
+  {0pt}{5pt}{3pt}
+
+% Tight bullet lists
+\setlist[itemize]{
+  nosep,
+  leftmargin=1.4em,
+  label=\textbullet,
+  topsep=1pt,
+  parsep=0pt,
+  itemsep=1pt,
+  partopsep=0pt
+}
+
+% ---------------------------------------------------------------------------
+% CUSTOM COMMANDS — Do NOT redefine or renewcommand these.
+% ---------------------------------------------------------------------------
+
+% Experience: \expentry{Company}{Role}{Location}{Dates}
+\newcommand{\expentry}[4]{%
+  \vspace{5pt}%
+  {\raggedright\textbf{#1}\hfill\textit{#4}}\par\nopagebreak
+  {\raggedright\textit{#2}\hfill#3}\par\nopagebreak
+  \vspace{1pt}%
+}
+
+% Education: \eduentry{School}{Degree}{Location}{Dates}
+\newcommand{\eduentry}[4]{%
+  \vspace{5pt}%
+  {\raggedright\textbf{#1}\hfill\textit{#4}}\par\nopagebreak
+  {\raggedright\textit{#2}\hfill#3}\par\nopagebreak
+  \vspace{1pt}%
+}
+
+% Project: \projentry{Name}{Tech Stack}{Date/Link}
+\newcommand{\projentry}[3]{%
+  \vspace{5pt}%
+  {\raggedright\textbf{#1}\enspace---\enspace\textit{#2}\hfill#3}\par\nopagebreak
+  \vspace{1pt}%
+}
+
+% =============================================================================
+% DOCUMENT
+% =============================================================================
+
+\begin{document}
+
+% ---------------------------------------------------------------------------
+% HEADER — centered name + single contact line
+% Wrap each icon+text in \mbox to prevent mid-item line breaks.
+% If the contact line is too wide, split into two centered lines.
+% ---------------------------------------------------------------------------
+\begin{center}
+  {\LARGE\bfseries John Doe}\\[3pt]
+  \mbox{\faIcon{envelope}\enspace{}\href{mailto:j@ex.com}{j@ex.com}}\quad
+  \mbox{\faIcon{phone}\enspace{}555}\quad
+  \mbox{\faIcon{linkedin}\enspace{}\href{https://linkedin.com/in/jd}{jd}}\quad
+  \mbox{\faIcon{github}\enspace{}\href{https://github.com/jd}{jd}}\quad
+  \mbox{\faIcon{map-marker-alt}\enspace{}NYC}
+\end{center}
+
+\vspace{-2pt}
+
+% ---------------------------------------------------------------------------
+% PROFESSIONAL SUMMARY
+% ---------------------------------------------------------------------------
+\section{Professional Summary}
+Engineer.
+
+% ---------------------------------------------------------------------------
+% EXPERIENCE
+% Use \expentry{Company}{Role}{Location}{Dates} then itemize bullets.
+% ---------------------------------------------------------------------------
+\section{Experience}
+
+
+% ---------------------------------------------------------------------------
+% EDUCATION
+% Use \eduentry{School}{Degree}{Location}{Dates}
+% ---------------------------------------------------------------------------
+\section{Education}
+
+
+% ---------------------------------------------------------------------------
+% SKILLS — compact comma-separated or categorized.
+% Example: \textbf{Languages:} Python, Go \quad \textbf{Tools:} Docker
+% ---------------------------------------------------------------------------
+\section{Skills}
+Go
+
+% ---------------------------------------------------------------------------
+% PROJECTS
+% Use \projentry{Name}{Tech Stack}{Date/Link} then itemize bullets.
+% ---------------------------------------------------------------------------
+\section{Projects}
+
+
+\end{document}
+
