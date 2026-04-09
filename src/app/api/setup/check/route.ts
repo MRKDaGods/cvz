@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { exec } from "child_process";
 import { existsSync } from "fs";
 import { join } from "path";
+import { getGitHubOAuthConfig, isValidSessionSecret } from "@/lib/env";
 
 interface DependencyStatus {
   name: string;
@@ -91,20 +92,35 @@ export async function GET() {
   }
 
   // 5. Environment variables
-  const envVars = [
-    { key: "GITHUB_CLIENT_ID", label: "GitHub OAuth Client ID" },
-    { key: "GITHUB_CLIENT_SECRET", label: "GitHub OAuth Client Secret" },
-    { key: "GITHUB_CALLBACK_URL", label: "GitHub OAuth Callback URL" },
-    { key: "SESSION_SECRET", label: "Session encryption key" },
-  ];
-
-  for (const { key, label } of envVars) {
-    deps.push({
-      name: label,
-      status: process.env[key] ? "ok" : "missing",
-      detail: process.env[key] ? "Configured" : `Set ${key} in .env.local`,
-    });
-  }
+  const githubConfig = getGitHubOAuthConfig();
+  deps.push({
+    name: "GitHub OAuth Client ID",
+    status: githubConfig.clientId ? "ok" : "missing",
+    detail: githubConfig.clientId ? "Configured" : "Set GITHUB_CLIENT_ID in .env.local",
+  });
+  deps.push({
+    name: "GitHub OAuth Client Secret",
+    status: githubConfig.clientSecret ? "ok" : "missing",
+    detail: githubConfig.clientSecret ? "Configured" : "Set GITHUB_CLIENT_SECRET in .env.local",
+  });
+  deps.push({
+    name: "GitHub OAuth Callback URL",
+    status: githubConfig.callbackUrl ? "ok" : "missing",
+    detail: githubConfig.callbackUrl ? "Configured" : "Set GITHUB_CALLBACK_URL in .env.local",
+  });
+  const sessionSecret = process.env.SESSION_SECRET;
+  deps.push({
+    name: "Session encryption key",
+    status: isValidSessionSecret(sessionSecret) ? "ok" : "missing",
+    detail: isValidSessionSecret(sessionSecret)
+      ? "Configured"
+      : "Set SESSION_SECRET in .env.local as 64 hex characters",
+  });
+  deps.push({
+    name: "Database URL",
+    status: "ok",
+    detail: process.env.DATABASE_URL ? "Configured" : "Using default file:./dev.db fallback",
+  });
 
   // 6. Database (prisma sqlite)
   const dbPath = join(process.cwd(), "dev.db");

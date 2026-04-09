@@ -45,12 +45,24 @@ npm install
 Copy the example env and fill in your values:
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
 
 You'll need:
 - A GitHub OAuth App — set the callback URL to `http://localhost:3000/api/auth/callback`
 - Generate a session secret: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+
+Suggested `.env.local` values:
+
+```env
+DATABASE_URL="file:./dev.db"
+GITHUB_CLIENT_ID=your_client_id
+GITHUB_CLIENT_SECRET=your_client_secret
+GITHUB_CALLBACK_URL=http://localhost:3000/api/auth/callback
+SESSION_SECRET=your_64_char_hex_string
+COPILOT_MODEL=gpt-4.1
+DEBUG_PIPELINE=false
+```
 
 Initialize the database and start:
 

@@ -161,7 +161,7 @@ export function FinalizeStep() {
         setCompiling(false);
       }
     },
-    [sessionId]
+    [sessionId, getModel]
   );
 
   const persistTemplateSelection = useCallback(

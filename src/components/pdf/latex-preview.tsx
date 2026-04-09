@@ -49,10 +49,12 @@ export function LatexPreview({ pdfUrl, compiling }: LatexPreviewProps) {
   }, []);
 
   // Reset on URL change
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setNumPages(null);
     setLoadError(null);
   }, [pdfUrl]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (compiling) {
     return (

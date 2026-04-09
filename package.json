@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "prisma generate && next dev",
+    "local": "powershell -NoProfile -ExecutionPolicy Bypass -File start-local.ps1",
+    "build": "prisma generate && next build",
+    "postinstall": "prisma generate",
     "start": "next start",
+    "prestart": "prisma generate",
     "lint": "eslint"
   },
   "dependencies": {

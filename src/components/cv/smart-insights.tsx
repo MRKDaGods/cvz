@@ -112,7 +112,7 @@ export function SmartInsights({ sessionId }: SmartInsightsProps) {
     } finally {
       setLoadingGaps(false);
     }
-  }, [sessionId, getModel]);
+  }, [sessionId, getModel, setStageResponse]);
 
   const fetchAts = useCallback(async () => {
     setLoadingAts(true);
@@ -135,7 +135,7 @@ export function SmartInsights({ sessionId }: SmartInsightsProps) {
     } finally {
       setLoadingAts(false);
     }
-  }, [sessionId, getModel]);
+  }, [sessionId, getModel, setStageResponse]);
 
   const fetchInterview = useCallback(async () => {
     setLoadingInterview(true);
@@ -157,7 +157,7 @@ export function SmartInsights({ sessionId }: SmartInsightsProps) {
     } finally {
       setLoadingInterview(false);
     }
-  }, [sessionId, getModel]);
+  }, [sessionId, getModel, setStageResponse]);
 
   return (
     <Card>

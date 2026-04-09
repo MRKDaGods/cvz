@@ -29,6 +29,7 @@ export function StreamingOutput({
   const thinkingRef = useRef<HTMLPreElement>(null);
 
   // Timer
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (status === "streaming") {
       startTime.current = Date.now();
@@ -39,6 +40,7 @@ export function StreamingOutput({
       return () => clearInterval(interval);
     }
   }, [status]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Autoscroll raw preview
   useEffect(() => {

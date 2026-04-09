@@ -282,7 +282,6 @@ export function SectionComments({
                         placeholder={comment.question ? "Type your answer here..." : "e.g., The actual improvement was 35%, the team had 8 people..."}
                         value={userContext}
                         onChange={(e) => setUserContext(e.target.value)}
-                        // eslint-disable-next-line jsx-a11y/no-autofocus
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {

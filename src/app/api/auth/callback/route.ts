@@ -3,8 +3,15 @@ import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { encrypt } from "@/lib/auth/crypto";
 import { createSession } from "@/lib/auth/session";
+import { getGitHubOAuthConfig } from "@/lib/env";
 
 export async function GET(request: NextRequest) {
+  const { clientId, clientSecret, missing } = getGitHubOAuthConfig();
+  if (!clientId || !clientSecret) {
+    const error = missing.length > 0 ? `github_oauth_not_configured:${missing.join("_")}` : "github_oauth_not_configured";
+    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error)}`, request.url));
+  }
+
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
 
@@ -31,8 +38,8 @@ export async function GET(request: NextRequest) {
         Accept: "application/json",
       },
       body: JSON.stringify({
-        client_id: process.env.GITHUB_CLIENT_ID,
-        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        client_id: clientId,
+        client_secret: clientSecret,
         code,
       }),
     });
@@ -74,7 +81,7 @@ export async function GET(request: NextRequest) {
   const githubId = String(githubUser.id);
   const username = String(githubUser.login);
   const avatarUrl = githubUser.avatar_url ? String(githubUser.avatar_url) : null;
-  let account = await db.account.findUnique({ where: { githubId } });
+  const account = await db.account.findUnique({ where: { githubId } });
 
   if (account) {
     // Update token

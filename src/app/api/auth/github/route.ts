@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getGitHubOAuthConfig } from "@/lib/env";
 
-export async function GET() {
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const callbackUrl = process.env.GITHUB_CALLBACK_URL;
+export async function GET(request: NextRequest) {
+  const { clientId, callbackUrl, missing } = getGitHubOAuthConfig();
   if (!clientId || !callbackUrl) {
-    return NextResponse.json({ error: "GitHub OAuth not configured" }, { status: 500 });
+    const error = missing.length > 0 ? `github_oauth_not_configured:${missing.join("_")}` : "github_oauth_not_configured";
+    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error)}`, request.url));
   }
 
   const state = crypto.randomUUID();
