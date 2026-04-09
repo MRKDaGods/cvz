@@ -42,6 +42,7 @@ model Session {
   scores      Score?
   latexSource String?
   pdfPath     String?
+  pdfHash     String?
 }
 
 model CvSection {

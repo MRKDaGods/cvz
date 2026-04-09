@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, FileText, Clipboard, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,20 +18,33 @@ import { JsonViewerButton } from "@/components/session/json-viewer";
 import { normalizeSectionTitle, serializeSectionContent, extractJSON } from "@/lib/utils";
 import { toast } from "sonner";
 
+const EXTRACT_STREAM_MESSAGES = [
+  "Extracting sections...",
+  "Analyzing experience and achievements...",
+  "Structuring content for review...",
+];
+
 export function UploadStep() {
-  const [cvText, setCvText] = useState("");
-  const [jobDesc, setJobDesc] = useState("");
+  const pipelineRawCvText = usePipelineStore((s) => s.rawCvText);
+  const pipelineJobDesc = usePipelineStore((s) => s.jobDesc);
+  const [cvText, setCvText] = useState(pipelineRawCvText ?? "");
+  const [jobDesc, setJobDesc] = useState(pipelineJobDesc ?? "");
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sessionId = usePipelineStore((s) => s.activeSessionId);
   const setStep = usePipelineStore((s) => s.setStep);
+  const setRawInputs = usePipelineStore((s) => s.setRawInputs);
   const setStageResponse = usePipelineStore((s) => s.setStageResponse);
   const setSections = useCvStore((s) => s.setSections);
   const setFieldAnalysis = useCvStore((s) => s.setFieldAnalysis);
   const getModel = useModelStore((s) => s.getModel);
   const addStageUsage = useUsageStore((s) => s.addStageUsage);
   const setQuota = useUsageStore((s) => s.setQuota);
+
+  useEffect(() => {
+    setRawInputs(cvText || null, jobDesc || null);
+  }, [cvText, jobDesc, setRawInputs]);
 
   const streaming = useStreaming({
     onComplete: (content) => {
@@ -66,6 +79,13 @@ export function UploadStep() {
           setFieldAnalysis(fa);
         }
         setStep("review");
+        if (sessionId) {
+          void fetch(`/api/sessions/${sessionId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ stage: "review" }),
+          });
+        }
         toast.success("CV sections extracted!");
       } catch {
         toast.error("Failed to parse extraction result");
@@ -232,6 +252,7 @@ export function UploadStep() {
         content={streaming.content}
         thinking={streaming.thinking}
         label="Extracting sections..."
+        labelMessages={EXTRACT_STREAM_MESSAGES}
         showPreview
       />
 

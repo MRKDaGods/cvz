@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Brain, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +9,7 @@ interface StreamingOutputProps {
   content: string;
   thinking?: string;
   label: string;
+  labelMessages?: string[];
   showPreview?: boolean;
   className?: string;
 }
@@ -18,10 +19,12 @@ export function StreamingOutput({
   content,
   thinking,
   label,
+  labelMessages,
   showPreview,
   className,
 }: StreamingOutputProps) {
   const [elapsed, setElapsed] = useState(0);
+  const [labelIndex, setLabelIndex] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [thinkingOpen, setThinkingOpen] = useState(false);
   const startTime = useRef(0);
@@ -41,6 +44,25 @@ export function StreamingOutput({
     }
   }, [status]);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  const rotatingLabels = useMemo(
+    () => (labelMessages && labelMessages.length > 0 ? labelMessages : [label]),
+    [label, labelMessages]
+  );
+
+  useEffect(() => {
+    if (status !== "streaming" || rotatingLabels.length <= 1) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setLabelIndex((current) => (current + 1) % rotatingLabels.length);
+    }, 2200);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [rotatingLabels, status]);
 
   // Autoscroll raw preview
   useEffect(() => {
@@ -102,7 +124,7 @@ export function StreamingOutput({
               ? "Error"
               : isThinking
                 ? "Thinking..."
-                : label}
+                : rotatingLabels[labelIndex % rotatingLabels.length]}
         </span>
       </div>
 

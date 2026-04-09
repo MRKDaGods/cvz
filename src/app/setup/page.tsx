@@ -213,7 +213,9 @@ export default function SetupPage() {
                           )}
                           {(dep.installHint.startsWith("winget") ||
                             dep.installHint.startsWith("brew") ||
-                            dep.installHint.startsWith("sudo")) && (
+                            dep.installHint.startsWith("sudo") ||
+                            dep.installHint.startsWith("mpm") ||
+                            dep.installHint.startsWith("tlmgr")) && (
                             <Button
                               size="sm"
                               className="h-7 text-xs"

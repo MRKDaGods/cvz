@@ -29,12 +29,14 @@ const stepComponents: Record<WizardStep, React.FC> = {
 
 export function Wizard() {
   const currentStep = usePipelineStore((s) => s.currentStep);
+  const maxStep = usePipelineStore((s) => s.maxStep);
   const setStep = usePipelineStore((s) => s.setStep);
   const currentIndex = steps.findIndex((s) => s.id === currentStep);
+  const maxIndex = steps.findIndex((s) => s.id === maxStep);
   const StepComponent = stepComponents[currentStep];
 
   const handleStepClick = (step: WizardStep, index: number) => {
-    if (index > currentIndex || step === currentStep) return;
+    if (index > maxIndex || step === currentStep) return;
 
     startTransition(() => {
       setStep(step);
@@ -51,7 +53,7 @@ export function Wizard() {
             {steps.map((step, i) => {
               const isActive = step.id === currentStep;
               const isDone = i < currentIndex;
-              const isReachable = i <= currentIndex;
+              const isReachable = i <= maxIndex;
               return (
                 <li key={step.id} className="flex items-center gap-1">
                   {i > 0 && (

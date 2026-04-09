@@ -34,6 +34,18 @@ The AI asks questions when it's unsure ("Did you mean 2 years at AWS or 3?"), fl
 - A [GitHub OAuth App](https://github.com/settings/developers) (for authentication)
 - [GitHub Copilot](https://github.com/features/copilot) subscription (the app uses Copilot's API for AI)
 
+### Windows LaTeX note (MiKTeX)
+
+If setup says `latexmk` or `pdflatex` is missing right after installing MiKTeX, it is usually a PATH refresh issue, not a failed install.
+
+1. Fully close and reopen VS Code/terminal after MiKTeX install.
+2. Verify binaries exist at `%LOCALAPPDATA%\\Programs\\MiKTeX\\miktex\\bin\\x64`.
+3. Run:
+  - `latexmk --version`
+  - `pdflatex --version`
+
+If those still fail, add `%LOCALAPPDATA%\\Programs\\MiKTeX\\miktex\\bin\\x64` to your user PATH and restart terminal/VS Code.
+
 ## Setup
 
 ```bash

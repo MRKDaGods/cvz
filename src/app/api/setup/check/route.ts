@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { existsSync } from "fs";
 import { join } from "path";
 import { getGitHubOAuthConfig, isValidSessionSecret } from "@/lib/env";
@@ -12,15 +12,77 @@ interface DependencyStatus {
   installHint?: string;
 }
 
-function checkCommand(cmd: string, args: string[]): Promise<{ ok: boolean; output: string }> {
+type LatexCommand = "latexmk" | "pdflatex" | "kpsewhich";
+
+const REQUIRED_TEMPLATE_STY_FILES = [
+  { file: "infwarerr.sty", packageId: "infwarerr" },
+  { file: "fontawesome5.sty", packageId: "fontawesome5" },
+  { file: "cabin.sty", packageId: "cabin" },
+  { file: "charter.sty", packageId: "charter" },
+  { file: "lmodern.sty", packageId: "lm" },
+];
+
+function getWindowsLatexCandidates(command: LatexCommand): string[] {
+  const localAppData = process.env.LOCALAPPDATA;
+  const userProfile = process.env.USERPROFILE;
+
+  const candidates = [
+    localAppData ? join(localAppData, "Programs", "MiKTeX", "miktex", "bin", "x64", `${command}.exe`) : null,
+    userProfile
+      ? join(userProfile, "AppData", "Local", "Programs", "MiKTeX", "miktex", "bin", "x64", `${command}.exe`)
+      : null,
+    join("C:\\Program Files", "MiKTeX", "miktex", "bin", "x64", `${command}.exe`),
+    join("C:\\Program Files", "MiKTeX 2.9", "miktex", "bin", "x64", `${command}.exe`),
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  return Array.from(new Set(candidates));
+}
+
+function getCommandCandidates(command: LatexCommand): string[] {
+  const fromPath = [command];
+  if (process.platform !== "win32") {
+    return fromPath;
+  }
+
+  const localCandidates = getWindowsLatexCandidates(command).filter((candidate) => existsSync(candidate));
+  return [...localCandidates, ...fromPath];
+}
+
+function checkCommand(command: LatexCommand, args: string[]): Promise<{ ok: boolean; output: string }> {
   return new Promise((resolve) => {
-    exec(`${cmd} ${args.join(" ")}`, { timeout: 10000 }, (err, stdout, stderr) => {
-      if (err) {
-        resolve({ ok: false, output: stderr || err.message });
-      } else {
-        resolve({ ok: true, output: stdout.trim() });
+    const candidates = getCommandCandidates(command);
+    let index = 0;
+    let lastOutput = "";
+
+    const next = () => {
+      if (index >= candidates.length) {
+        resolve({ ok: false, output: lastOutput || `${command} not found` });
+        return;
       }
-    });
+
+      const candidate = candidates[index++];
+      execFile(candidate, args, { timeout: 10000 }, (err, stdout, stderr) => {
+        if (!err) {
+          resolve({ ok: true, output: stdout.trim() });
+          return;
+        }
+
+        const errCode = (err as NodeJS.ErrnoException & { code?: string | number }).code;
+        const isEnoent = errCode === "ENOENT";
+        lastOutput = stderr || err.message;
+
+        // ENOENT means this candidate command path does not exist in this environment.
+        // For any other error, the command was found and executed, so keep this message.
+        if (!isEnoent) {
+          resolve({ ok: false, output: lastOutput });
+          return;
+        }
+
+        next();
+      });
+    };
+
+    next();
   });
 }
 
@@ -62,12 +124,19 @@ export async function GET() {
       version: versionLine,
     });
   } else {
+    const needsPerl = /script engine 'perl'|required to execute 'latexmk'|fix-script-engine-not-found/i.test(
+      latexmk.output
+    );
     deps.push({
       name: "LaTeX (latexmk)",
       status: "missing",
-      detail: "Required for PDF compilation",
-      installHint: process.platform === "win32"
-        ? "winget install MiKTeX.MiKTeX"
+      detail: needsPerl
+        ? "MiKTeX found, but latexmk cannot run because Perl is missing"
+        : "Required for PDF compilation",
+      installHint: needsPerl
+        ? "winget install StrawberryPerl.StrawberryPerl"
+        : process.platform === "win32"
+          ? "winget install MiKTeX.MiKTeX"
         : process.platform === "darwin"
           ? "brew install --cask mactex-no-gui"
           : "sudo apt-get install texlive-full latexmk",
@@ -91,7 +160,48 @@ export async function GET() {
     });
   }
 
-  // 5. Environment variables
+  // 5. Template package files (required for all template options)
+  const kpsewhich = await checkCommand("kpsewhich", ["--version"]);
+  if (kpsewhich.ok) {
+    const missingTemplateFiles: string[] = [];
+
+    for (const requiredFile of REQUIRED_TEMPLATE_STY_FILES) {
+      const lookup = await checkCommand("kpsewhich", [requiredFile.file]);
+      if (!lookup.ok || !lookup.output.trim()) {
+        missingTemplateFiles.push(`${requiredFile.file} (${requiredFile.packageId})`);
+      }
+    }
+
+    if (missingTemplateFiles.length === 0) {
+      deps.push({
+        name: "Template LaTeX packages",
+        status: "ok",
+        detail: "All required package files are available",
+      });
+    } else {
+      deps.push({
+        name: "Template LaTeX packages",
+        status: "missing",
+        detail: `Missing package files: ${missingTemplateFiles.join(", ")}`,
+        installHint:
+          process.platform === "win32"
+            ? "mpm --install=infwarerr; mpm --install=fontawesome5; mpm --install=cabin; mpm --install=charter; mpm --install=lm"
+            : "tlmgr install infwarerr fontawesome5 cabin charter lmodern",
+      });
+    }
+  } else {
+    deps.push({
+      name: "Template LaTeX packages",
+      status: "missing",
+      detail: "Could not verify package files with kpsewhich",
+      installHint:
+        process.platform === "win32"
+          ? "mpm --install=infwarerr; mpm --install=fontawesome5; mpm --install=cabin; mpm --install=charter; mpm --install=lm"
+          : "tlmgr install infwarerr fontawesome5 cabin charter lmodern",
+    });
+  }
+
+  // 6. Environment variables
   const githubConfig = getGitHubOAuthConfig();
   deps.push({
     name: "GitHub OAuth Client ID",
@@ -122,7 +232,7 @@ export async function GET() {
     detail: process.env.DATABASE_URL ? "Configured" : "Using default file:./dev.db fallback",
   });
 
-  // 6. Database (prisma sqlite)
+  // 7. Database (prisma sqlite)
   const dbPath = join(process.cwd(), "dev.db");
   if (existsSync(dbPath)) {
     deps.push({
@@ -139,7 +249,10 @@ export async function GET() {
     });
   }
 
-  const allOk = deps.every((d) => d.status === "ok");
+  const pdflatexReady = deps.some((d) => d.name === "pdflatex" && d.status === "ok");
+  const allOk = deps.every((d) =>
+    d.status === "ok" || (d.name === "LaTeX (latexmk)" && pdflatexReady)
+  );
 
   return NextResponse.json({ ready: allOk, dependencies: deps });
 }

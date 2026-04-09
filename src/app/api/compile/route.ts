@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
+import fs from "fs/promises";
 import { getActiveAccount, getCurrentUser, verifySessionOwner } from "@/lib/auth/session";
 import { getCopilotClient } from "@/lib/copilot/client";
 import { createPipelineSession } from "@/lib/copilot/session";
 import { sendAndWait } from "@/lib/stream/sse";
-import { compileLatex, parseLatexErrors, resolveTargetPageCount } from "@/lib/latex/compiler";
+import { compileLatex, getPdfPageCount, parseLatexErrors, resolveTargetPageCount } from "@/lib/latex/compiler";
 import { db } from "@/lib/db";
 
 const MAX_RETRIES = 5;
+
+function hashLatex(text: string): string {
+  return createHash("sha256").update(text).digest("hex");
+}
 
 function normalizeLatex(text: string): string {
   return text
@@ -39,7 +45,7 @@ export async function POST(request: NextRequest) {
 
   const dbSession = await db.session.findUnique({
     where: { id: sessionId },
-    select: { fieldAnalysis: true },
+    select: { fieldAnalysis: true, pdfHash: true, pdfPath: true },
   });
 
   if (!dbSession) {
@@ -47,8 +53,26 @@ export async function POST(request: NextRequest) {
   }
 
   const pageLimit = resolveTargetPageCount(dbSession.fieldAnalysis);
+  const normalizedLatex = normalizeLatex(latex);
+  const requestedHash = hashLatex(normalizedLatex);
 
-  let currentLatex = latex;
+  if (dbSession.pdfHash === requestedHash && dbSession.pdfPath) {
+    try {
+      await fs.access(dbSession.pdfPath);
+      const pageCount = await getPdfPageCount(dbSession.pdfPath);
+      return NextResponse.json({
+        success: true,
+        cached: true,
+        pdfPath: dbSession.pdfPath,
+        pageCount: pageCount ?? null,
+        pageLimit,
+      });
+    } catch {
+      // Cached file no longer exists on disk. Continue with a fresh compile.
+    }
+  }
+
+  let currentLatex = normalizedLatex;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     const result = await compileLatex(currentLatex, sessionId);
@@ -80,7 +104,11 @@ export async function POST(request: NextRequest) {
         // Page overflow after all retries — return PDF anyway with a warning
         await db.session.update({
           where: { id: sessionId },
-          data: { pdfPath: result.pdfPath, latexSource: currentLatex },
+          data: {
+            pdfPath: result.pdfPath,
+            latexSource: currentLatex,
+            pdfHash: hashLatex(currentLatex),
+          },
         });
         return NextResponse.json({
           success: true,
@@ -94,7 +122,11 @@ export async function POST(request: NextRequest) {
       // Save PDF path
       await db.session.update({
         where: { id: sessionId },
-        data: { pdfPath: result.pdfPath, latexSource: currentLatex },
+        data: {
+          pdfPath: result.pdfPath,
+          latexSource: currentLatex,
+          pdfHash: hashLatex(currentLatex),
+        },
       });
       return NextResponse.json({
         success: true,

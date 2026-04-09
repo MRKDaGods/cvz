@@ -20,6 +20,24 @@ import { useUsageStore } from "@/stores/usage-store";
 import { getTemplateOption, type TemplateId } from "@/lib/templates";
 import { toast } from "sonner";
 
+const LATEX_STREAM_MESSAGES = [
+  "Generating LaTeX...",
+  "Applying template layout rules...",
+  "Preparing a compilable document...",
+];
+
+const FIX_STREAM_MESSAGES = [
+  "Fixing compilation errors...",
+  "Repairing LaTeX syntax and references...",
+  "Revalidating document structure...",
+];
+
+const FIT_STREAM_MESSAGES = [
+  "Condensing to fit page limit...",
+  "Tightening spacing and sections...",
+  "Balancing readability and brevity...",
+];
+
 const LatexPreview = dynamic(
   () => import("@/components/pdf/latex-preview").then((m) => m.LatexPreview),
   { ssr: false }
@@ -274,6 +292,7 @@ export function FinalizeStep() {
         content={latexStreaming.content}
         thinking={latexStreaming.thinking}
         label="Generating LaTeX..."
+        labelMessages={LATEX_STREAM_MESSAGES}
         showPreview
       />
 
@@ -386,6 +405,7 @@ export function FinalizeStep() {
                 content={fixErrorsStreaming.content}
                 thinking={fixErrorsStreaming.thinking}
                 label="Fixing compilation errors..."
+                labelMessages={FIX_STREAM_MESSAGES}
                 showPreview
               />
 
@@ -418,6 +438,7 @@ export function FinalizeStep() {
                 content={fitStreaming.content}
                 thinking={fitStreaming.thinking}
                 label="Condensing to fit page limit..."
+                labelMessages={FIT_STREAM_MESSAGES}
                 showPreview
               />
 
