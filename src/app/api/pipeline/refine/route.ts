@@ -3,6 +3,7 @@ import { getActiveAccount, verifySessionOwner } from "@/lib/auth/session";
 import { getCopilotClient } from "@/lib/copilot/client";
 import { createPipelineSession } from "@/lib/copilot/session";
 import { createSSEFromSession } from "@/lib/stream/sse";
+import { db } from "@/lib/db";
 import { debug } from "@/lib/debug";
 
 export async function POST(request: NextRequest) {
@@ -95,6 +96,23 @@ export async function POST(request: NextRequest) {
     debug.pipeline(`[refine] Starting for section type: ${sectionType}, session: ${sessionId}`);
     const { refineSectionPrompt } = await import("@/lib/pipeline/prompts");
 
+    // Fetch other sections so the LLM has full CV context
+    let cvContext: string | undefined;
+    try {
+      const allSections = await db.cvSection.findMany({
+        where: { sessionId },
+        select: { type: true, title: true, optimizedContent: true, originalContent: true },
+      });
+      const otherSections = allSections.filter((s) => s.type !== sectionType);
+      if (otherSections.length > 0) {
+        cvContext = otherSections
+          .map((s) => `[${s.type}] ${s.title}\n${s.optimizedContent ?? s.originalContent}`)
+          .join("\n\n");
+      }
+    } catch (err) {
+      debug.pipeline("[refine] Failed to fetch CV context (non-fatal):", err instanceof Error ? err.message : String(err));
+    }
+
     const client = await getCopilotClient(account.accessToken, account.id);
     const prompt = refineSectionPrompt(
       currentContent,
@@ -102,6 +120,7 @@ export async function POST(request: NextRequest) {
       userInstructions ?? "",
       aiComments ?? "[]",
       requestMode === "ask" ? "ask" : "rewrite",
+      cvContext,
     );
     const session = await createPipelineSession(client, { systemPrompt: prompt, model });
 
