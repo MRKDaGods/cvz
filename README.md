@@ -4,7 +4,7 @@ CV optimizer that turns your resume into something you'd actually want to submit
 
 Based on [CvOptimizZer](https://github.com/MRKDaGods/CvOptimizZer) (2024).
 
-**by Mohamed Ammar & Claude :)**
+**by Mohamed Ammar, Seif Tamer & Claude :)**
 
 ## What it does
 
