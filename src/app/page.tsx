@@ -160,7 +160,7 @@ export default function LandingPage() {
           <div className="container mx-auto px-6">
             <h2 className="text-lg font-medium text-center mb-10 text-muted-foreground">How it works</h2>
             <div className="flex flex-wrap justify-center gap-8 md:gap-12">
-              {steps.map((s, i) => (
+              {steps.map((s) => (
                 <div key={s.step} className="flex items-start gap-3 text-left max-w-[160px]">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-medium text-muted-foreground">
                     {s.step}

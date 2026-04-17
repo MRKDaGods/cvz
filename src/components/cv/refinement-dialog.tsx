@@ -24,7 +24,7 @@ import { useUsageStore } from "@/stores/usage-store";
 import { ModelSelector } from "@/components/session/model-selector";
 import { StreamingOutput } from "@/components/session/streaming-output";
 import { JsonViewerButton } from "@/components/session/json-viewer";
-import { extractJSON, formatSectionContentPreview, serializeSectionContent, stripCodeFences, toStringArray } from "@/lib/utils";
+import { extractJSON, formatSectionContentPreview, serializeSectionContent, toStringArray } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface RefinementDialogProps {

@@ -213,7 +213,9 @@ export default function SetupPage() {
                           )}
                           {(dep.installHint.startsWith("winget") ||
                             dep.installHint.startsWith("brew") ||
-                            dep.installHint.startsWith("sudo")) && (
+                            dep.installHint.startsWith("sudo") ||
+                            dep.installHint.startsWith("mpm") ||
+                            dep.installHint.startsWith("tlmgr")) && (
                             <Button
                               size="sm"
                               className="h-7 text-xs"
@@ -266,20 +268,26 @@ export default function SetupPage() {
                     in the project root with the following variables:
                   </p>
                   <div className="relative">
-                    <pre className="text-[11px] font-mono bg-muted rounded p-2 whitespace-pre-wrap">{`# GitHub OAuth App (create at github.com/settings/applications/new)
+                    <pre className="text-[11px] font-mono bg-muted rounded p-2 whitespace-pre-wrap">{`DATABASE_URL="file:./dev.db"
+
+# GitHub OAuth App (create at github.com/settings/applications/new)
 GITHUB_CLIENT_ID=your_client_id
 GITHUB_CLIENT_SECRET=your_client_secret
 GITHUB_CALLBACK_URL=http://localhost:3000/api/auth/callback
 
-# Session encryption (generate with: node -e "console.log(crypto.randomBytes(32).toString('hex'))")
-SESSION_SECRET=your_64_char_hex_string`}</pre>
+# Session encryption (generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+SESSION_SECRET=your_64_char_hex_string
+
+# Optional defaults
+COPILOT_MODEL=gpt-4.1
+DEBUG_PIPELINE=false`}</pre>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="absolute top-1 right-1 h-6 w-6 p-0"
                       onClick={() =>
                         copyToClipboard(
-                          `GITHUB_CLIENT_ID=your_client_id\nGITHUB_CLIENT_SECRET=your_client_secret\nGITHUB_CALLBACK_URL=http://localhost:3000/api/auth/callback\nSESSION_SECRET=`
+                          `DATABASE_URL="file:./dev.db"\n\nGITHUB_CLIENT_ID=your_client_id\nGITHUB_CLIENT_SECRET=your_client_secret\nGITHUB_CALLBACK_URL=http://localhost:3000/api/auth/callback\n\nSESSION_SECRET=your_64_char_hex_string\n\nCOPILOT_MODEL=gpt-4.1\nDEBUG_PIPELINE=false`
                         )
                       }
                     >

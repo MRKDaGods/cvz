@@ -4,12 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { usePipelineStore, type WizardStep } from "@/stores/pipeline-store";
+import { isWizardStep, usePipelineStore } from "@/stores/pipeline-store";
 import { useCvStore } from "@/stores/cv-store";
 import { useUsageStore } from "@/stores/usage-store";
 import { Wizard } from "@/components/session/wizard";
 import { UserMenu } from "@/components/layout/user-menu";
 import { AppBrand } from "@/components/layout/app-brand";
+import { useDebouncedSessionAutosave } from "@/hooks/use-debounced-session-autosave";
 import { DEFAULT_TEMPLATE_ID, isTemplateId } from "@/lib/templates";
 import { normalizeSectionTitle } from "@/lib/utils";
 import { toast } from "sonner";
@@ -30,8 +31,10 @@ export default function SessionPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const { setSessionId, setStep, setSelectedTemplateId, reset } = usePipelineStore();
+  const { setSessionId, setStep, setSelectedTemplateId, setRawInputs, reset } = usePipelineStore();
   const { setSections, setScores, setFieldAnalysis } = useCvStore();
+
+  useDebouncedSessionAutosave(params.id, { enabled: !loading, delayMs: 2000 });
 
   useEffect(() => {
     reset();
@@ -46,7 +49,8 @@ export default function SessionPage() {
         return r.json();
       })
       .then((session) => {
-        setStep(session.stage as WizardStep);
+        setStep(isWizardStep(session.stage) ? session.stage : "upload");
+        setRawInputs(session.rawCvText ?? null, session.jobDesc ?? null);
         setSelectedTemplateId(
           isTemplateId(session.templateId) ? session.templateId : DEFAULT_TEMPLATE_ID,
         );
@@ -78,6 +82,7 @@ export default function SessionPage() {
     setFieldAnalysis,
     setSections,
     setScores,
+    setRawInputs,
     setSelectedTemplateId,
     setSessionId,
     setStep,

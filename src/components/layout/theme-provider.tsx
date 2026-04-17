@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useUiStore } from "@/stores/ui-store";
 
 function applyTheme(theme: "light" | "dark" | "system") {
@@ -14,7 +14,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const theme = useUiStore((s) => s.theme);
 
-  useEffect(() => {
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useLayoutEffect(() => {
     // Restore saved preference into store
     const saved = localStorage.getItem("cvz-theme") as "light" | "dark" | "system" | null;
     if (saved) {
@@ -22,6 +23,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
     setMounted(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Apply theme whenever store changes
   useEffect(() => {

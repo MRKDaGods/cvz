@@ -1,13 +1,20 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePipelineStore } from "@/stores/pipeline-store";
 import { useCvStore } from "@/stores/cv-store";
 import { SectionCard } from "@/components/cv/section-card";
 import { FieldAnalysisCard } from "@/components/cv/field-analysis-card";
 import { JsonViewerButton } from "@/components/session/json-viewer";
+import { ContextualLoader } from "@/components/ui/contextual-loader";
 import { toast } from "sonner";
+
+const EXTRACT_LOADING_MESSAGES = [
+  "Analyzing your CV structure...",
+  "Identifying sections and chronology...",
+  "Preparing reviewable content...",
+];
 
 export function ReviewStep() {
   const sessionId = usePipelineStore((s) => s.activeSessionId);
@@ -47,9 +54,11 @@ export function ReviewStep() {
       {fieldAnalysis && <FieldAnalysisCard data={fieldAnalysis} />}
 
       {isExtracting ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
+        <ContextualLoader
+          messages={EXTRACT_LOADING_MESSAGES}
+          className="py-12"
+          iconClassName="h-7 w-7"
+        />
       ) : sections.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           No sections extracted. Go back and upload your CV.

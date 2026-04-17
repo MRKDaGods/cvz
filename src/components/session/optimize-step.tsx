@@ -22,6 +22,12 @@ import { useUsageStore } from "@/stores/usage-store";
 import { extractJSON, formatSectionContentPreview, serializeSectionContent } from "@/lib/utils";
 import { toast } from "sonner";
 
+const OPTIMIZE_STREAM_MESSAGES = [
+  "Optimizing your CV...",
+  "Boosting impact and keyword coverage...",
+  "Refining bullets for ATS and clarity...",
+];
+
 export function OptimizeStep() {
   const sessionId = usePipelineStore((s) => s.activeSessionId);
   const setStep = usePipelineStore((s) => s.setStep);
@@ -93,6 +99,13 @@ export function OptimizeStep() {
         }
         setOptimized(true);
         setIterationCount((c) => c + 1);
+        if (sessionId) {
+          void fetch(`/api/sessions/${sessionId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ stage: "finalize" }),
+          });
+        }
         toast.success("CV optimized!");
       } catch {
         toast.error("Failed to parse optimization result");
@@ -370,6 +383,7 @@ export function OptimizeStep() {
         content={streaming.content}
         thinking={streaming.thinking}
         label="Optimizing your CV..."
+        labelMessages={OPTIMIZE_STREAM_MESSAGES}
         showPreview
       />
 

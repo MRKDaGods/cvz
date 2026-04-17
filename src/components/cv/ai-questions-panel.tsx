@@ -85,7 +85,7 @@ export function AiQuestionsPanel({ sections, onSubmitAnswers }: AiQuestionsPanel
   const answeredCount = Object.values(answers).filter((v) => v.trim()).length;
   const visibleQuestions = questions.filter((_, i) => !dismissed.has(i));
   const criticalUnanswered = visibleQuestions.filter(
-    (q, i) => q.comment.severity === "critical" && !q.comment.applied && !answers[questions.indexOf(q)]?.trim()
+    (q) => q.comment.severity === "critical" && !q.comment.applied && !answers[questions.indexOf(q)]?.trim()
   ).length;
 
   if (questions.length === 0) return null;

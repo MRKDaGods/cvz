@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ContextualLoader } from "@/components/ui/contextual-loader";
 
 // react-pdf requires pdf.js worker — use CDN to avoid bundling issues
 import { Document, Page, pdfjs } from "react-pdf";
@@ -14,6 +14,17 @@ interface LatexPreviewProps {
   pdfUrl: string | null;
   compiling: boolean;
 }
+
+const COMPILING_MESSAGES = [
+  "Formatting LaTeX layout...",
+  "Compiling PDF pages...",
+  "Resolving references and spacing...",
+];
+
+const PDF_LOADING_MESSAGES = [
+  "Loading generated PDF...",
+  "Rendering preview pages...",
+];
 
 export function LatexPreview({ pdfUrl, compiling }: LatexPreviewProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -49,17 +60,16 @@ export function LatexPreview({ pdfUrl, compiling }: LatexPreviewProps) {
   }, []);
 
   // Reset on URL change
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setNumPages(null);
     setLoadError(null);
   }, [pdfUrl]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (compiling) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Compiling PDF...</span>
-      </div>
+      <ContextualLoader messages={COMPILING_MESSAGES} />
     );
   }
 
@@ -85,9 +95,12 @@ export function LatexPreview({ pdfUrl, compiling }: LatexPreviewProps) {
         onLoadSuccess={onLoadSuccess}
         onLoadError={onLoadError}
         loading={
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
+          <ContextualLoader
+            messages={PDF_LOADING_MESSAGES}
+            className="py-10"
+            iconClassName="h-6 w-6"
+            messageClassName="text-xs"
+          />
         }
       >
         {numPages &&

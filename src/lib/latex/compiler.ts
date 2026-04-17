@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import { existsSync } from "fs";
 import fs from "fs/promises";
 import path from "path";
 import os from "os";
@@ -45,7 +46,7 @@ export function resolveTargetPageCount(fieldAnalysis: string | null): number {
   return 1;
 }
 
-async function getPdfPageCount(pdfFile: string): Promise<number | undefined> {
+export async function getPdfPageCount(pdfFile: string): Promise<number | undefined> {
   const buffer = await fs.readFile(pdfFile);
   const parser = new PDFParse({ data: buffer }) as unknown as PdfParseWithLoad;
 
@@ -76,19 +77,23 @@ export async function compileLatex(
     await fs.writeFile(texFile, latexSource, "utf-8");
 
     const result = await runLatexmk(texFile, tempDir);
+    const compileResult =
+      result.exitCode === 0 || !shouldFallbackToPdfLatex(result.output)
+        ? result
+        : await runPdfLatex(texFile, tempDir);
 
-    if (result.exitCode === 0) {
+    if (compileResult.exitCode === 0) {
       // Check if PDF was created
       try {
         await fs.access(pdfFile);
         const pageCount = await getPdfPageCount(pdfFile);
         return { success: true, pdfPath: pdfFile, pageCount };
       } catch {
-        return { success: false, log: result.output, error: "PDF not generated" };
+        return { success: false, log: compileResult.output, error: "PDF not generated" };
       }
     }
 
-    return { success: false, log: result.output, error: "Compilation failed" };
+    return { success: false, log: compileResult.output, error: "Compilation failed" };
   } catch (error) {
     return {
       success: false,
@@ -97,35 +102,142 @@ export async function compileLatex(
   }
 }
 
-function runLatexmk(
-  texFile: string,
-  cwd: string
+function resolveLatexmkCommand(): string {
+  if (process.platform !== "win32") {
+    return "latexmk";
+  }
+
+  const localAppData = process.env.LOCALAPPDATA;
+  const userProfile = process.env.USERPROFILE;
+  const candidates = [
+    localAppData
+      ? path.join(localAppData, "Programs", "MiKTeX", "miktex", "bin", "x64", "latexmk.exe")
+      : null,
+    userProfile
+      ? path.join(userProfile, "AppData", "Local", "Programs", "MiKTeX", "miktex", "bin", "x64", "latexmk.exe")
+      : null,
+    path.join("C:\\Program Files", "MiKTeX", "miktex", "bin", "x64", "latexmk.exe"),
+    path.join("C:\\Program Files", "MiKTeX 2.9", "miktex", "bin", "x64", "latexmk.exe"),
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  return candidates.find((candidate) => existsSync(candidate)) ?? "latexmk";
+}
+
+function resolvePdfLatexCommand(): string {
+  if (process.platform !== "win32") {
+    return "pdflatex";
+  }
+
+  const localAppData = process.env.LOCALAPPDATA;
+  const userProfile = process.env.USERPROFILE;
+  const candidates = [
+    localAppData
+      ? path.join(localAppData, "Programs", "MiKTeX", "miktex", "bin", "x64", "pdflatex.exe")
+      : null,
+    userProfile
+      ? path.join(userProfile, "AppData", "Local", "Programs", "MiKTeX", "miktex", "bin", "x64", "pdflatex.exe")
+      : null,
+    path.join("C:\\Program Files", "MiKTeX", "miktex", "bin", "x64", "pdflatex.exe"),
+    path.join("C:\\Program Files", "MiKTeX 2.9", "miktex", "bin", "x64", "pdflatex.exe"),
+  ].filter((candidate): candidate is string => Boolean(candidate));
+
+  return candidates.find((candidate) => existsSync(candidate)) ?? "pdflatex";
+}
+
+function createLatexEnv(command: string): NodeJS.ProcessEnv {
+  const commandDir = path.dirname(command);
+  const currentPath = process.env.PATH ?? process.env.Path ?? "";
+  const hasCommandDir = currentPath
+    .split(path.delimiter)
+    .some((entry) => entry.toLowerCase() === commandDir.toLowerCase());
+
+  return {
+    ...process.env,
+    PATH: hasCommandDir || !path.isAbsolute(command)
+      ? currentPath
+      : `${commandDir}${path.delimiter}${currentPath}`,
+  };
+}
+
+function shouldFallbackToPdfLatex(output: string): boolean {
+  const lower = output.toLowerCase();
+  return (
+    lower.includes("script engine 'perl'") ||
+    lower.includes("required to execute 'latexmk'") ||
+    lower.includes("latexmk") && lower.includes("not found") ||
+    lower.includes("enoent")
+  );
+}
+
+function runSingleLatexCommand(
+  command: string,
+  args: string[],
+  cwd: string,
+  env: NodeJS.ProcessEnv
 ): Promise<{ exitCode: number; output: string }> {
   return new Promise((resolve) => {
-    const proc = spawn(
-      "latexmk",
-      ["-pdf", "-interaction=nonstopmode", "-halt-on-error", texFile],
-      { cwd }
-    );
-
+    let settled = false;
     let output = "";
+
+    const finalize = (exitCode: number, finalOutput: string) => {
+      if (settled) return;
+      settled = true;
+      resolve({ exitCode, output: finalOutput });
+    };
+
+    const proc = spawn(command, args, { cwd, env });
+    const timeout = setTimeout(() => {
+      proc.kill();
+      finalize(1, output + "\nTimed out after 60 seconds");
+    }, 60000);
+
     proc.stdout.on("data", (data) => (output += data.toString()));
     proc.stderr.on("data", (data) => (output += data.toString()));
 
     proc.on("close", (code) => {
-      resolve({ exitCode: code ?? 1, output });
+      clearTimeout(timeout);
+      finalize(code ?? 1, output);
     });
 
     proc.on("error", (err) => {
-      resolve({ exitCode: 1, output: err.message });
+      clearTimeout(timeout);
+      finalize(1, output + (output ? "\n" : "") + err.message);
     });
-
-    // Timeout after 60 seconds
-    setTimeout(() => {
-      proc.kill();
-      resolve({ exitCode: 1, output: output + "\nTimed out after 60 seconds" });
-    }, 60000);
   });
+}
+
+function runLatexmk(
+  texFile: string,
+  cwd: string
+): Promise<{ exitCode: number; output: string }> {
+  const latexmkCommand = resolveLatexmkCommand();
+  const env = createLatexEnv(latexmkCommand);
+  return runSingleLatexCommand(
+    latexmkCommand,
+    ["-pdf", "-interaction=nonstopmode", "-halt-on-error", texFile],
+    cwd,
+    env
+  );
+}
+
+async function runPdfLatex(
+  texFile: string,
+  cwd: string
+): Promise<{ exitCode: number; output: string }> {
+  const pdflatexCommand = resolvePdfLatexCommand();
+  const env = createLatexEnv(pdflatexCommand);
+  const args = ["-interaction=nonstopmode", "-halt-on-error", texFile];
+
+  const passOne = await runSingleLatexCommand(pdflatexCommand, args, cwd, env);
+  if (passOne.exitCode !== 0) {
+    return passOne;
+  }
+
+  const passTwo = await runSingleLatexCommand(pdflatexCommand, args, cwd, env);
+  return {
+    exitCode: passTwo.exitCode,
+    output: [passOne.output, passTwo.output].filter(Boolean).join("\n"),
+  };
 }
 
 export function parseLatexErrors(log: string): string[] {
