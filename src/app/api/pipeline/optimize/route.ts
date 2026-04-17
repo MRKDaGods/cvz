@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { sessionId, model, userNotes } = await request.json();
+  const { sessionId, model, userNotes, useOptimizedBase, clientSections } = await request.json();
   if (!sessionId) {
     return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
   }
@@ -75,17 +75,33 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const sectionsJson = JSON.stringify(
-      updatedSession!.sections.map((s) => {
-        const payload = parseSectionContent(s.originalContent);
-        return {
-          type: s.type,
-          title: s.title,
-          content: payload.content,
-          entries: payload.entries,
-        };
-      })
-    );
+    let sectionsJson: string;
+    if (useOptimizedBase && Array.isArray(clientSections) && clientSections.length > 0) {
+      // Use client-side sections which include per-section refinements
+      sectionsJson = JSON.stringify(
+        clientSections.map((s: { type: string; title: string; content: string }) => {
+          const payload = parseSectionContent(s.content);
+          return {
+            type: s.type,
+            title: s.title,
+            content: payload.content,
+            entries: payload.entries,
+          };
+        })
+      );
+    } else {
+      sectionsJson = JSON.stringify(
+        updatedSession!.sections.map((s) => {
+          const payload = parseSectionContent(s.originalContent);
+          return {
+            type: s.type,
+            title: s.title,
+            content: payload.content,
+            entries: payload.entries,
+          };
+        })
+      );
+    }
 
     debug.pipeline(`[optimize] ${updatedSession!.sections.length} sections to optimize`);
 

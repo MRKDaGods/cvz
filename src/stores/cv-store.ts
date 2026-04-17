@@ -87,3 +87,17 @@ export const useCvStore = create<CvState>((set) => ({
       showOriginal: false,
     }),
 }));
+
+/** Persist section changes to the database (fire-and-forget). */
+export function persistSection(
+  id: string,
+  data: Partial<Pick<CvSection, "title" | "optimizedContent" | "aiComments">>,
+) {
+  fetch(`/api/sections/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  }).catch(() => {
+    // Non-fatal — local state is still correct
+  });
+}

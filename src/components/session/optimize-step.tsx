@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { usePipelineStore } from "@/stores/pipeline-store";
-import { useCvStore, type CvSection, type AiComment } from "@/stores/cv-store";
+import { useCvStore, persistSection, type CvSection, type AiComment } from "@/stores/cv-store";
 import { useModelStore } from "@/stores/model-store";
 import { useUiStore } from "@/stores/ui-store";
 import { SectionCard } from "@/components/cv/section-card";
@@ -42,6 +42,7 @@ export function OptimizeStep() {
   const [notesOpen, setNotesOpen] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(true);
   const [iterationCount, setIterationCount] = useState(0);
+  const [useOptimizedBase, setUseOptimizedBase] = useState(true);
   const [applyingFix, setApplyingFix] = useState<{
     sectionId: string;
     commentIndex: number;
@@ -105,12 +106,22 @@ export function OptimizeStep() {
   });
 
   const handleOptimize = useCallback(() => {
+    const useOpt = iterationCount > 0 ? useOptimizedBase : false;
     streaming.start("/api/pipeline/optimize", {
       sessionId,
       model: getModel("optimize"),
       userNotes: userNotes.trim() || undefined,
+      useOptimizedBase: useOpt,
+      // Send current client-side sections so refinements are included
+      ...(useOpt && {
+        clientSections: sections.map((s) => ({
+          type: s.type,
+          title: s.title,
+          content: s.optimizedContent ?? s.originalContent,
+        })),
+      }),
     });
-  }, [sessionId, streaming, getModel, userNotes]);
+  }, [sessionId, streaming, getModel, userNotes, iterationCount, useOptimizedBase, sections]);
 
   const handleContinue = async () => {
     try {
@@ -135,14 +146,16 @@ export function OptimizeStep() {
         const result = extractJSON(content);
         const section = useCvStore.getState().sections.find((s) => s.id === ref.sectionId);
         if (section && result.content) {
-          updateSection(ref.sectionId, {
+          const updates = {
             optimizedContent: serializeSectionContent(
               result.content,
               Array.isArray(result.entries) ? result.entries : undefined,
             ),
             aiComments:
               section.aiComments?.filter((c) => c.text !== ref.commentText) ?? null,
-          });
+          };
+          updateSection(ref.sectionId, updates);
+          persistSection(ref.sectionId, updates);
           toast.success("Fix applied with your context");
         }
       } catch {
@@ -188,11 +201,13 @@ export function OptimizeStep() {
       }
 
       // Direct apply — just remove the comment
-      updateSection(sectionId, {
+      const updates = {
         optimizedContent: content,
         aiComments:
           section.aiComments?.filter((c) => c.text !== comment.text) ?? null,
-      });
+      };
+      updateSection(sectionId, updates);
+      persistSection(sectionId, updates);
       toast.success("Fix applied");
     },
     [sections, updateSection, sessionId, getModel, fixStreaming],
@@ -202,10 +217,12 @@ export function OptimizeStep() {
     (sectionId: string, comment: AiComment) => {
       const section = sections.find((s) => s.id === sectionId);
       if (!section) return;
-      updateSection(sectionId, {
+      const updates = {
         aiComments:
           section.aiComments?.filter((c) => c.text !== comment.text) ?? null,
-      });
+      };
+      updateSection(sectionId, updates);
+      persistSection(sectionId, updates);
       toast.message("Comment dismissed");
     },
     [sections, updateSection],
@@ -313,6 +330,25 @@ export function OptimizeStep() {
                       className="min-h-[100px] text-sm"
                     />
                   )}
+                </div>
+
+                {/* Optimization base selector */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>Optimize from:</span>
+                  <button
+                    type="button"
+                    className={`px-2 py-0.5 rounded transition-colors ${useOptimizedBase ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+                    onClick={() => setUseOptimizedBase(true)}
+                  >
+                    Current (optimized)
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-2 py-0.5 rounded transition-colors ${!useOptimizedBase ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+                    onClick={() => setUseOptimizedBase(false)}
+                  >
+                    Original
+                  </button>
                 </div>
 
                 {/* Re-optimize button */}

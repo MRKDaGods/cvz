@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { sessionId, model } = await request.json();
+  const { sessionId, model, clientSections } = await request.json();
   if (!sessionId) {
     return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
   }
@@ -52,17 +52,33 @@ export async function POST(request: NextRequest) {
       templateSource = ""; // Will work without template
     }
 
-    const optimizedCv = JSON.stringify(
-      dbSession.sections.map((s) => {
-        const payload = parseSectionContent(s.optimizedContent ?? s.originalContent);
-        return {
-          type: s.type,
-          title: s.title,
-          content: payload.content,
-          entries: payload.entries,
-        };
-      })
-    );
+    let optimizedCv: string;
+    if (Array.isArray(clientSections) && clientSections.length > 0) {
+      // Use client-side sections which include per-section refinements
+      optimizedCv = JSON.stringify(
+        clientSections.map((s: { type: string; title: string; content: string }) => {
+          const payload = parseSectionContent(s.content);
+          return {
+            type: s.type,
+            title: s.title,
+            content: payload.content,
+            entries: payload.entries,
+          };
+        })
+      );
+    } else {
+      optimizedCv = JSON.stringify(
+        dbSession.sections.map((s) => {
+          const payload = parseSectionContent(s.optimizedContent ?? s.originalContent);
+          return {
+            type: s.type,
+            title: s.title,
+            content: payload.content,
+            entries: payload.entries,
+          };
+        })
+      );
+    }
 
     const client = await getCopilotClient(account.accessToken, account.id);
     const prompt = generateLatexPrompt(

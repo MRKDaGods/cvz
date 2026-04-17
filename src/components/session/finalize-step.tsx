@@ -2,10 +2,11 @@
 
 import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
-import { ArrowLeft, Download, FileCode, Loader2, RefreshCw, Scissors, Wrench } from "lucide-react";
+import { ArrowLeft, Check, Download, FileCode, Loader2, Pencil, RefreshCw, Scissors, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { usePipelineStore } from "@/stores/pipeline-store";
 import { useCvStore } from "@/stores/cv-store";
 import { useModelStore } from "@/stores/model-store";
@@ -40,6 +41,8 @@ export function FinalizeStep() {
   const [compileError, setCompileError] = useState<string | null>(null);
   const [latexErrors, setLatexErrors] = useState<string[]>([]);
   const [pageOverflow, setPageOverflow] = useState(false);
+  const [editingLatex, setEditingLatex] = useState(false);
+  const [editedLatex, setEditedLatex] = useState("");
   const addStageUsage = useUsageStore((s) => s.addStageUsage);
   const setQuota = useUsageStore((s) => s.setQuota);
 
@@ -187,6 +190,11 @@ export function FinalizeStep() {
         void latexStreaming.start("/api/pipeline/latex", {
           sessionId,
           model: getModel("latex"),
+          clientSections: sections.map((s) => ({
+            type: s.type,
+            title: s.title,
+            content: s.optimizedContent ?? s.originalContent,
+          })),
         });
       })
       .catch(() => {
@@ -211,6 +219,11 @@ export function FinalizeStep() {
           await latexStreaming.start("/api/pipeline/latex", {
             sessionId,
             model: getModel("latex"),
+            clientSections: sections.map((s) => ({
+              type: s.type,
+              title: s.title,
+              content: s.optimizedContent ?? s.originalContent,
+            })),
           });
         }
       } catch {
@@ -452,20 +465,80 @@ export function FinalizeStep() {
             </CardContent>
           </Card>
 
-          {/* LaTeX Source Download */}
+          {/* LaTeX Source — view / edit / compile */}
           {latexSource && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">LaTeX Source</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm">LaTeX Source</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (editingLatex) {
+                        setEditingLatex(false);
+                      } else {
+                        setEditedLatex(latexSource);
+                        setEditingLatex(true);
+                      }
+                    }}
+                  >
+                    {editingLatex ? (
+                      <>Cancel</>
+                    ) : (
+                      <>
+                        <Pencil className="mr-1 h-3 w-3" />
+                        Edit
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardHeader>
-              <CardContent>
-                <pre className="text-xs bg-muted p-3 rounded max-h-32 overflow-y-auto whitespace-pre-wrap">
-                  {latexSource.slice(0, 500)}...
-                </pre>
+              <CardContent className="space-y-2">
+                {editingLatex ? (
+                  <>
+                    <Textarea
+                      value={editedLatex}
+                      onChange={(e) => setEditedLatex(e.target.value)}
+                      className="min-h-[300px] font-mono text-xs leading-relaxed"
+                      spellCheck={false}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          setLatexSource(editedLatex);
+                          setEditingLatex(false);
+                          // Persist and compile
+                          await fetch(`/api/sessions/${sessionId}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ latexSource: editedLatex }),
+                          });
+                          compilePdf(editedLatex);
+                        }}
+                        disabled={isBusy || editedLatex === latexSource}
+                      >
+                        <Check className="mr-1 h-3 w-3" />
+                        Apply & Compile
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditedLatex(latexSource)}
+                      >
+                        Reset
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <pre className="text-xs bg-muted p-3 rounded max-h-32 overflow-y-auto whitespace-pre-wrap">
+                    {latexSource.slice(0, 500)}...
+                  </pre>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-2"
                   onClick={() => {
                     const blob = new Blob([latexSource], { type: "text/plain" });
                     const url = URL.createObjectURL(blob);

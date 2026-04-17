@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SectionComments } from "@/components/cv/section-comments";
-import { useCvStore, type AiComment } from "@/stores/cv-store";
+import { useCvStore, persistSection, type AiComment } from "@/stores/cv-store";
 import { useModelStore } from "@/stores/model-store";
 import { usePipelineStore } from "@/stores/pipeline-store";
 import { useStreaming } from "@/hooks/use-streaming";
@@ -190,11 +190,13 @@ export function RefinementDialog({
   const handleApplyProposal = () => {
     if (!proposal) return;
 
-    updateSection(sectionId, {
+    const updates = {
       title: proposal.title,
       optimizedContent: serializeSectionContent(proposal.rawContent, proposal.entries),
       aiComments: proposal.aiComments.length > 0 ? proposal.aiComments : section?.aiComments,
-    });
+    };
+    updateSection(sectionId, updates);
+    persistSection(sectionId, updates);
     toast.success(`${section?.title} updated`);
     onClose();
   };

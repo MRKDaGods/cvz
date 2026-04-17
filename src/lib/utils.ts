@@ -235,9 +235,9 @@ function formatObjectAsLines(obj: Record<string, unknown>): string {
 function formatEntryPreview(entry: Record<string, unknown>): string {
   const lines: string[] = []
 
-  // Title line: "Software Engineer at Acme Corp"
-  const title = entry.title ?? entry.degree
-  const org = entry.organization
+  // Title line: "Software Engineer at Acme Corp" or "Project Name"
+  const title = entry.title ?? entry.degree ?? entry.name ?? entry.position ?? entry.role
+  const org = entry.organization ?? entry.company ?? entry.institution ?? entry.school
   if (title && org) {
     lines.push(`${title} — ${org}`)
   } else if (title) {
@@ -260,15 +260,36 @@ function formatEntryPreview(entry: Record<string, unknown>): string {
   if (entry.field) lines.push(String(entry.field))
   if (entry.gpa) lines.push(`GPA: ${entry.gpa}`)
 
-  // Description
+  // URL for projects/publications
+  if (typeof entry.url === "string" && entry.url.trim()) lines.push(entry.url.trim())
+  if (typeof entry.link === "string" && entry.link.trim()) lines.push(entry.link.trim())
+
+  // Technologies for projects
+  const tech = entry.technologies ?? entry.tech ?? entry.techStack ?? entry.stack
+  if (Array.isArray(tech) && tech.length > 0) {
+    lines.push(`Tech: ${tech.join(", ")}`)
+  } else if (typeof tech === "string" && tech.trim()) {
+    lines.push(`Tech: ${tech.trim()}`)
+  }
+
+  // Description / content
   if (typeof entry.description === "string" && entry.description.trim()) {
     lines.push(entry.description.trim())
+  } else if (typeof entry.content === "string" && entry.content.trim()) {
+    lines.push(entry.content.trim())
   }
 
   // Bullets
   if (Array.isArray(entry.bullets)) {
     for (const b of entry.bullets) {
       if (typeof b === "string" && b.trim()) lines.push(`• ${b.trim()}`)
+    }
+  }
+
+  // Links (e.g. project repos)
+  if (Array.isArray(entry.links)) {
+    for (const l of entry.links) {
+      if (typeof l === "string" && l.trim()) lines.push(l.trim())
     }
   }
 
