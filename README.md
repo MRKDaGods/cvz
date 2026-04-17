@@ -52,10 +52,11 @@ You'll need:
 - A GitHub OAuth App — set the callback URL to `http://localhost:3000/api/auth/callback`
 - Generate a session secret: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
-Initialize the database and start:
+Initialize the database, generate the Prisma client, and start:
 
 ```bash
 npx prisma db push
+npx prisma generate
 npm run dev
 ```
 
